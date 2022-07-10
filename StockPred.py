@@ -21,9 +21,11 @@ def ploss(Truth, Pred):
     return (buyFac * -Truth) + (sellFac * Truth)
 
 
+def lloss(Truth, Pred):
+    return (Pred * -Truth)
+
 class StockPred:
-    sdh = None
-    model = None
+
 
     def loadNpyData(self, npyfile='smallstox2.npy',verbose=False):
         """
@@ -36,6 +38,8 @@ class StockPred:
         self.sdh.calcLogDif()
 
     def __init__(self):
+        self.sdh = None
+        self.model = None
         self.loadNpyData()
 
     def buildmod(self, lays, dropouts, ac, ac2):
@@ -102,7 +106,7 @@ class StockPred:
         :param testSetPct: The percent of the dataset to set aside as testing data
         :param testSetRandom: Whether to pick test cases from the end or randomly
         """
-        x, y = self.buildDataSet(inDataCols="D",outDataCols="D")
+        x, y = self.buildDataSet(inDataCols="D",outDataCols="D",verbose=1)
         if testSetRandom == False:
             self.trainX = x[:-int(len(x) * (testSetPct))]
             self.trainY = y[:-int(len(x) * (testSetPct))]
@@ -115,19 +119,21 @@ class StockPred:
             self.trainY = y[randor[:-int(len(x) * (testSetPct))]]
             self.testX = x[randor[-int(len(x) * (testSetPct)):]]
             self.testY = y[randor[-int(len(x) * (testSetPct)):]]
-        model = spd.buildmod([100,50,25,20,15,10,1], [], 'tanh', 'sigmoid')
+        self.model = spd.buildmod([100,50,25,20,15,10,1], [9,.35,.35], 'tanh', 'sigmoid')
         for i in range(1, 50):
             op = keras.optimizers.Adadelta(.1**(2+i/10))
-            model.compile(op, ploss)
-            model.fit(self.trainX,self.trainY, epochs=i, shuffle=1, validation_split=.05)
+            self.model.compile(op, ploss)
+            self.model.fit(self.trainX,self.trainY, epochs=i, shuffle=1, validation_split=.05)
             print(model.predict(x[-10:]))
             print(sp.sum(model.predict(self.testX) * self.testY))
 
 
 
+model = spd.buildmod([100,80,60,50,40,30,25,20,15,10,1], [0,.25,.25,.25,.25], 'selu', 'linear')
+model = spd.buildmod([100,64,32,16,8,4,1], [],'elu', 'linear')
 for i in range(1, 50):
     op = keras.optimizers.Adadelta(.1**(2+i/10))
-    model.compile(op, ploss)
-    model.fit(x[:-25000],y[:-25000], epochs=i, shuffle=1, validation_split=.05)
-    print(model.predict(x[-10:]))
+    model.compile(op, lloss)
+    model.fit(x[:-25000],y[:-25000]-.0001*i, epochs=i, shuffle=1, validation_split=.05)
+    print(model.predict(x[-50:]))
     print(sp.sum(model.predict(x[-25000:]) * y[-25000:]))

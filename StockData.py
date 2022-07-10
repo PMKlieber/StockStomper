@@ -6,13 +6,10 @@ from dateutil import parser
 
 
 class StockDataHandler:
-    zf = ""
-    sym = {}
-    symi = []
-    vdates = []
-    symnames = {}
+    def __init__(self, zfloc="~/Quotesz.zip", exchanges=['NYSE', 'NASDAQ', 'AMEX'],verbose=False):
+        self.sym={}
+        self.vdates=[]
 
-    def __init__(self, zfloc="~/Quotesz.zip", exchanges=['NYSE', 'NASDAQ', 'AMEX']):
         if zfloc is None:
             return
         zf = zipfile.ZipFile(zfloc)
@@ -21,18 +18,12 @@ class StockDataHandler:
             fns.sort()
             for i in fns:
                 csv1 = [k for k in csv.reader([j.decode('utf-8') for j in zf.open(i).readlines()])]
+                if verbose: print("Adding data from {}".format(i))
                 for j in csv1:
                     if j[0] not in self.sym:
+                        print("adding {}".format(j[0]))
                         self.sym[j[0]] = {}
-                    dts = parser.parse(j[1]).strftime('%Y%m%d')
-                self.sym[j[0]][dts] = sp.array([float(l) for l in j[2:6]])
-                if dts not in self.vdates:
-                    self.vdates.append(dts)
-                dmax = max([len(self.sym[i]) for i in self.sym])
-            print("{} -> {}".format(i, dts))
-
-    # Load stock histories from Numpy dump file
-    def loadFromNpy(self, npyloc="bigsym.npy"):
+                    dts = parser.parse(j[1]).strftime('%Y%m%d')6859
         self.sym = sp.load(npyloc, allow_pickle=1).flatten()[0]
         self.symi = list(self.sym)
 

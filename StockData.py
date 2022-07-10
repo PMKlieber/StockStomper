@@ -150,3 +150,29 @@ class StockDataHandler:
             for j in of:
                 j = j.split("\t")
                 self.symnames[j[0]] = j[1][:-1]
+
+    def getDataArray(self,cols='OLHCD',verbose=False):
+        #refresh dates and symbol list
+        self.refreshDates()
+        self.symi=list(self.sym)
+        self.calcLogDif()
+        ret=[]
+        for stockind,stockname in enumerate(self.symi):
+            col=[]
+            for stockdateind,stockdate in enumerate(self.vdates[:-1]):
+                row=[]
+                for k in cols:
+                    if k=="O": #Open
+                        row.append(self.sym[stockname][stockdate][0])
+                    if k=="L": #Low
+                        row.append(self.sym[stockname][stockdate][1])
+                    if k=="H": #High
+                        row.append(self.sym[stockname][stockdate][2])
+                    if k=="C": #Close
+                        row.append(self.sym[stockname][stockdate][3])
+                    if k=="D": #Difference Log
+                        row.append(self.oc[stockind][stockdateind])
+                col.append(row)
+            if verbose: print("Added {}, rows={}".format(stockname,len(ret)))
+            ret.append(col)
+        return sp.array(ret)

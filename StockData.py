@@ -51,14 +51,14 @@ class StockDataHandler:
         self.symi = list(self.sym)
         # Find stock histories that are missing dates
         for j in self.sym:
-            if verbose:
+            if verbose>0:
                 print("Checking {}  ({}/{})".format(j, self.symi.index(j), len(self.sym)))
             for k in self.vdates:
                 if k not in self.sym[j]:
                     # Set missing date's history's (Open,Low,High,Close) all to latest existing date before missing date
                     self.sym[j][k] = sic(
                         self.sym[j][([list(self.sym[j])[0]] + sorted([i for i in self.sym[j] if int(i) < int(k)]))[-1]])
-                    if verbose:
+                    if verbose>1:
                         print("{} missing {}, filling with {}".format(j, k, self.sym[j][k]))
                     self.sym[j] = dict(sorted(self.sym[j].items()))
 
@@ -125,7 +125,7 @@ class StockDataHandler:
         self.sym = newsym
         self.symi = list(self.sym)
 
-    def pruneSparseDates(self, minStocksReq=0.5):
+    def pruneSparseDates(self, minStocksReq=0.5,verbose=False):
         """
         Removes dates that only have data for a small number of stocks
 
@@ -134,8 +134,11 @@ class StockDataHandler:
         if minStocksReq < 1:
             minStocksReq = int(len(self.symi) * minStocksReq)
         newdates = [self.vdates[j[0]] for j in sp.argwhere(sp.sum(self.oc != 0, 0) >= minStocksReq)]
+        deldates=[i for i in self.vdates if i not in newdates]
         for j in self.symi:
-            for k in [i for i in self.sym[j] if i not in newdates]:
+            if verbose>0:
+                print("Updating {}".format(j))
+            for k in deldates:
                 self.sym[j].pop(k)
         self.vdates = newdates
 

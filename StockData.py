@@ -23,7 +23,16 @@ class StockDataHandler:
                     if j[0] not in self.sym:
                         print("adding {}".format(j[0]))
                         self.sym[j[0]] = {}
-                    dts = parser.parse(j[1]).strftime('%Y%m%d')6859
+                    dts = parser.parse(j[1]).strftime('%Y%m%d')
+                    self.sym[j[0]][dts] = sp.array([float(l) for l in j[2:6]])
+                if dts not in self.vdates:
+                    self.vdates.append(dts)
+                dmax = max([len(self.sym[i]) for i in self.sym])
+            print("{} -> {}".format(i, dts))
+
+
+    # Load stock histories from Numpy dump file
+    def loadFromNpy(self, npyloc="bigsym.npy"):
         self.sym = sp.load(npyloc, allow_pickle=1).flatten()[0]
         self.symi = list(self.sym)
 

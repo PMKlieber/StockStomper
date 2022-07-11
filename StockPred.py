@@ -24,6 +24,9 @@ def ploss(Truth, Pred):
 def lloss(Truth, Pred):
     return (Pred * -Truth)
 
+
+
+
 class StockPred:
 
 
@@ -105,6 +108,9 @@ class StockPred:
         to show accuracy and progress
         :param testSetPct: The percent of the dataset to set aside as testing data
         :param testSetRandom: Whether to pick test cases from the end or randomly
+
+        Columns: O=Open, L=Low, H=High, C=Close, D=Diff Log
+                         l=LOw log diff h=Higgh log diff
         """
         x, y = self.buildDataSet(inDataCols="D",outDataCols="D",verbose=1)
         if testSetRandom == False:
@@ -128,12 +134,22 @@ class StockPred:
             print(sp.sum(model.predict(self.testX) * self.testY))
 
 
+def wls(w):
+    def wlloss(Truth, Pred):
+        return (Pred * (-Truth+K.sign(Pred)*K.log(1+K.abs(Pred*w))))
+    return wlloss
 
-model = spd.buildmod([100,80,60,50,40,30,25,20,15,10,1], [0,.25,.25,.25,.25], 'selu', 'linear')
-model = spd.buildmod([100,64,32,16,8,4,1], [],'elu', 'linear')
-for i in range(1, 50):
-    op = keras.optimizers.Adadelta(.1**(2+i/10))
-    model.compile(op, lloss)
-    model.fit(x[:-25000],y[:-25000]-.0001*i, epochs=i, shuffle=1, validation_split=.05)
-    print(model.predict(x[-50:]))
-    print(sp.sum(model.predict(x[-25000:]) * y[-25000:]))
+
+def trainModel():
+absnorm=lambda i:i/sp.sum(sp.absolute(i))
+model = spd.buildmod([100,80,60,40,20,10,1], [],'selu', 'linear')
+for i in range(1, 10,1):
+    print(i)
+    op = keras.optimizers.Adagrad(.1**(3+i/5))
+    model.compile('Nadam', wls(.01*(1+i/10)))
+    model.fit(x[:-25000],y[:-25000], epochs=3, shuffle=1, validation_split=.05)
+    poopred=(model.predict(x[-1000:])).flatten()
+    print(poopred)
+    print("\n".join(["{}".format(sp.array((poopred[j], y[-1000:][j][0]))) for j in sp.argsort(poopred)[-10:]]))
+    print(sp.sum(absnorm(model.predict(x[-25000:])) * y[-25000:]))
+
